@@ -276,14 +276,14 @@ resource "volterra_http_loadbalancer" "lb_https" {
           }
           flow_label {
             authentication {
-              login {
+              login #{
                 #transaction_result {
                   #failure_conditions {
                     #status = "401"
                   #}
                 #}
-                disable_transaction_result = true
-              }
+                #disable_transaction_result = true
+              #}
             }
           }
         }
