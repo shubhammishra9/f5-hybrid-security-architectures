@@ -282,7 +282,7 @@ resource "volterra_http_loadbalancer" "lb_https" {
                     status = "401"
                   }
                 }*/
-                disable_transaction_result = true           
+                #disable_transaction_result = true           
               }
             }
           }
