@@ -267,7 +267,8 @@ resource "volterra_http_loadbalancer" "lb_https" {
           http_methods = ["METHOD_POST", "METHOD_PUT"]
           mitigation {
             block {
-              body = "string:///WW91ciByZXF1ZXN0IHdhcyBCTE9DS0VEID4uPAo="
+              status = "Unauthorized"
+              body   = "string:///WW91ciByZXF1ZXN0IHdhcyBCTE9DS0VEID4uPAo="
             }
           }
           path {
@@ -277,9 +278,10 @@ resource "volterra_http_loadbalancer" "lb_https" {
             authentication {
               login {
                 transaction_result {
-                  failure_conditions {
-                    status = "401"
-                  }
+                  #failure_conditions {
+                    #status = "401"
+                  #}
+                  disable_transaction_result = true
                 }
               }
             }
@@ -295,7 +297,10 @@ resource "volterra_http_loadbalancer" "lb_https" {
   dynamic "enable_ddos_detection" {
     for_each = var.xc_ddos_pro ? [1] : []
     content {
-      enable_auto_mitigation = true
+      #enable_auto_mitigation = true
+      enable_auto_mitigation {
+        block = true
+      }
     }
   }
   dynamic "ddos_mitigation_rules" {
