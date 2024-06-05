@@ -32,4 +32,3 @@ resource "volterra_registration_approval" "gke-k8s-ce" {
   wait_time = 150
   hostname = "vp-manager-0"
 }
-
