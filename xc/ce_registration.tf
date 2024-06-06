@@ -4,6 +4,8 @@ resource "volterra_site_state" "eks-site" {
   name  = var.eks_site_name
   state = "DECOMMISSIONING"
   when  = "delete"
+  wait_time  = 150
+  retry      = 5
 }
 
 resource "volterra_registration_approval" "eks-k8s-ce" {
@@ -21,6 +23,8 @@ resource "volterra_site_state" "gke-site" {
   name  = var.gke_site_name
   state = "DECOMMISSIONING"
   when  = "delete"
+  wait_time  = 150
+  retry      = 5
 }
 
 resource "volterra_registration_approval" "gke-k8s-ce" {
