@@ -52,4 +52,3 @@ spec:
         - containerPort: 8000
 YAML
 }
-
