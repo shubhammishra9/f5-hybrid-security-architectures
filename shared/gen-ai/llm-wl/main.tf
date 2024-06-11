@@ -52,15 +52,7 @@ spec:
         - containerPort: 8000
 YAML
 
-  wait = {
-    fields = {
-      # Check the phase of a pod
-      "status.phase" = "Running"
-
-      # Check a container's status
-      "status.containerStatuses[0].ready" = "true"
-    }
-  }
+  wait = true
 
   timeouts {
     create = "20m"
