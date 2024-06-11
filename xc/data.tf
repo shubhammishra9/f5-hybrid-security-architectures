@@ -32,3 +32,4 @@ data "tfe_outputs" "gke" {
   organization        = var.tf_cloud_organization
   workspace           = "gke"
 }
+
