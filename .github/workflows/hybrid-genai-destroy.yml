@@ -540,87 +540,13 @@ jobs:
         run: terraform destroy -auto-approve -input=false
 
 
-  terraform_eks:
-    name: "Destroy EKS"
-    runs-on: ubuntu-latest
-    needs: terraform_llm
-    defaults:
-      run:
-        working-directory: ./aws/eks-cluster
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
-
-      - name: Setup Terraform Backend
-        id: backend
-        run: |
-          cat > backend.tf << EOF
-          terraform {
-            cloud {
-              organization = "${{ secrets.TF_CLOUD_ORGANIZATION }}"
-              workspaces {
-                name = "${{ secrets.TF_CLOUD_WORKSPACE_EKS }}"
-              }
-            }
-          }
-          EOF
-
-      - name: Terraform Init
-        id: init
-        run: terraform init
-
-      - name: Terraform Validate
-        id: validate
-        run: terraform validate -no-color
-
-      - name: Terraform Plan
-        id: plan
-        if: github.event_name == 'pull_request'
-        run: terraform plan -no-color -input=false
-        continue-on-error: true
-
-      - uses: actions/github-script@v6
-        if: github.event_name == 'pull_request'
-        env:
-          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const output = `#### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
-            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
-            <details><summary>Show Plan</summary>
-            \`\`\`\n
-            ${process.env.PLAN}
-            \`\`\`
-            </details>
-            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            })
-      - name: Terraform Plan Status
-        if: steps.plan.outcome == 'failure'
-        run: exit 1
-
-      - name: Terraform Destroy
-        if: github.ref == 'refs/heads/destroy-hybrid-genai' && github.event_name == 'push'
-        run: terraform destroy -auto-approve -input=false
-
-  # terraform_gke:
-  #   name: "Destroy GKE"
+  # terraform_eks:
+  #   name: "Destroy EKS"
   #   runs-on: ubuntu-latest
-  #   needs: terraform_app
+  #   needs: terraform_llm
   #   defaults:
   #     run:
-  #       working-directory: ./gcp/gke-cluster
+  #       working-directory: ./aws/eks-cluster
   #   steps:
   #     - name: Checkout
   #       uses: actions/checkout@v4
@@ -638,7 +564,7 @@ jobs:
   #           cloud {
   #             organization = "${{ secrets.TF_CLOUD_ORGANIZATION }}"
   #             workspaces {
-  #               name = "${{ secrets.TF_CLOUD_WORKSPACE_GKE }}"
+  #               name = "${{ secrets.TF_CLOUD_WORKSPACE_EKS }}"
   #             }
   #           }
   #         }
@@ -688,14 +614,13 @@ jobs:
   #       if: github.ref == 'refs/heads/destroy-hybrid-genai' && github.event_name == 'push'
   #       run: terraform destroy -auto-approve -input=false
 
-
-  terraform_aws_infra:
-    name: "Destroy AWS Infra"
+  terraform_gke:
+    name: "Destroy GKE"
     runs-on: ubuntu-latest
-    needs: terraform_eks
+    needs: terraform_app
     defaults:
       run:
-        working-directory: ./aws/aws-infra
+        working-directory: ./gcp/gke-cluster
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -713,7 +638,7 @@ jobs:
             cloud {
               organization = "${{ secrets.TF_CLOUD_ORGANIZATION }}"
               workspaces {
-                name = "${{ secrets.TF_CLOUD_WORKSPACE_AWS_INFRA }}"
+                name = "${{ secrets.TF_CLOUD_WORKSPACE_GKE }}"
               }
             }
           }
@@ -763,13 +688,14 @@ jobs:
         if: github.ref == 'refs/heads/destroy-hybrid-genai' && github.event_name == 'push'
         run: terraform destroy -auto-approve -input=false
 
-  # terraform_gcp_infra:
-  #   name: "Destroy GCP Infra"
+
+  # terraform_aws_infra:
+  #   name: "Destroy AWS Infra"
   #   runs-on: ubuntu-latest
-  #   needs: terraform_gke
+  #   needs: terraform_eks
   #   defaults:
   #     run:
-  #       working-directory: ./gcp/gcp-infra
+  #       working-directory: ./aws/aws-infra
   #   steps:
   #     - name: Checkout
   #       uses: actions/checkout@v4
@@ -787,7 +713,7 @@ jobs:
   #           cloud {
   #             organization = "${{ secrets.TF_CLOUD_ORGANIZATION }}"
   #             workspaces {
-  #               name = "${{ secrets.TF_CLOUD_WORKSPACE_GCP_INFRA }}"
+  #               name = "${{ secrets.TF_CLOUD_WORKSPACE_AWS_INFRA }}"
   #             }
   #           }
   #         }
@@ -829,11 +755,85 @@ jobs:
   #             repo: context.repo.repo,
   #             body: output
   #           })
-
   #     - name: Terraform Plan Status
   #       if: steps.plan.outcome == 'failure'
   #       run: exit 1
 
   #     - name: Terraform Destroy
   #       if: github.ref == 'refs/heads/destroy-hybrid-genai' && github.event_name == 'push'
-  #       run: terraform destroy -auto-approve -input=false        
+  #       run: terraform destroy -auto-approve -input=false
+
+  terraform_gcp_infra:
+    name: "Destroy GCP Infra"
+    runs-on: ubuntu-latest
+    needs: terraform_gke
+    defaults:
+      run:
+        working-directory: ./gcp/gcp-infra
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Setup Terraform Backend
+        id: backend
+        run: |
+          cat > backend.tf << EOF
+          terraform {
+            cloud {
+              organization = "${{ secrets.TF_CLOUD_ORGANIZATION }}"
+              workspaces {
+                name = "${{ secrets.TF_CLOUD_WORKSPACE_GCP_INFRA }}"
+              }
+            }
+          }
+          EOF
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        if: github.event_name == 'pull_request'
+        run: terraform plan -no-color -input=false
+        continue-on-error: true
+
+      - uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+            <details><summary>Show Plan</summary>
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+            </details>
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Destroy
+        if: github.ref == 'refs/heads/destroy-hybrid-genai' && github.event_name == 'push'
+        run: terraform destroy -auto-approve -input=false        
