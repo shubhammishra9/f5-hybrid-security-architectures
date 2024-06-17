@@ -8,3 +8,4 @@ provider "kubectl" {
     token = data.aws_eks_cluster_auth.auth.token
     load_config_file       = false
 }
+
