@@ -401,4 +401,11 @@ resource "volterra_http_loadbalancer" "lb_https" {
       }
     }
   }
+
+  dynamic "more_option" {
+    for_each = var.hybrid_genai ? [1] : []
+    idle_timeout = 300000
+  }
 }
+
+

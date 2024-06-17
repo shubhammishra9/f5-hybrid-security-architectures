@@ -7,7 +7,7 @@ xc_namespace = "demo"
 app_domain = "llama.llm"
 
 #XC WAF
-xc_waf_blocking = false
+xc_waf_blocking = true
 
 # XC Data Guard
 xc_data_guard = true
